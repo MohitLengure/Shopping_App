@@ -9,6 +9,7 @@ import com.example.shoppingapp_user.domain.models.ProductModels
 import com.example.shoppingapp_user.domain.models.UserData
 import com.example.shoppingapp_user.domain.useCase.GetAllCategoryUseCase
 import com.example.shoppingapp_user.domain.useCase.GetAllProducts
+import com.example.shoppingapp_user.domain.useCase.GetProductById
 import com.example.shoppingapp_user.domain.useCase.LoginWithEmailPassUseCase
 import com.example.shoppingapp_user.domain.useCase.RegisterUserWithEmailPassUseCase
 import com.example.shoppingapp_user.domain.useCase.getCategoryinlimit
@@ -29,7 +30,8 @@ class MyViewModel @Inject constructor(
     private val getAllProducts: GetAllProducts,
     private val getProductsInLimitUseCase: getProductsInLimitUseCase,
     private val registerUserWithEmailPassUseCase : RegisterUserWithEmailPassUseCase,
-    private val loginWithEmailPassUseCase: LoginWithEmailPassUseCase
+    private val loginWithEmailPassUseCase: LoginWithEmailPassUseCase,
+    private val GetProductById : GetProductById
 ) : ViewModel() {
 
     private val _getAllCategoryState = MutableStateFlow(GetCategoryState())
@@ -112,13 +114,15 @@ class MyViewModel @Inject constructor(
     fun registerUser(userData: UserData) {
         viewModelScope.launch {
             registerUserWithEmailPassUseCase.registerUserusecase(userData).collectLatest {
-                when(it) {
+                when (it) {
                     is ResultState.Loading -> {
                         _registerUserState.value = RegisterUserState(isLoading = true)
                     }
+
                     is ResultState.Success -> {
                         _registerUserState.value = RegisterUserState(userdata = it.data)
                     }
+
                     is ResultState.Error -> {
                         _registerUserState.value = RegisterUserState(error = it.error)
                     }
@@ -138,29 +142,58 @@ class MyViewModel @Inject constructor(
 
     fun loginwithemailpassword(userEmail: String, userPassword: String) {
         viewModelScope.launch {
-            loginWithEmailPassUseCase.loginWithEmailPassUseCase(userEmail, userPassword).collectLatest {
-                when(it) {
-                    is ResultState.Loading -> {
-                        _loginWithEmailPassState.value = LoginWithEmailPassState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _loginWithEmailPassState.value = LoginWithEmailPassState(userdata = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _loginWithEmailPassState.value = LoginWithEmailPassState(error = it.error)
-                    }
+            loginWithEmailPassUseCase.loginWithEmailPassUseCase(userEmail, userPassword)
+                .collectLatest {
+                    when (it) {
+                        is ResultState.Loading -> {
+                            _loginWithEmailPassState.value =
+                                LoginWithEmailPassState(isLoading = true)
+                        }
 
-                    else -> {
-                        _loginWithEmailPassState.value = LoginWithEmailPassState(error = "Unknown Error")
+                        is ResultState.Success -> {
+                            _loginWithEmailPassState.value =
+                                LoginWithEmailPassState(userdata = it.data)
+                        }
+
+                        is ResultState.Error -> {
+                            _loginWithEmailPassState.value =
+                                LoginWithEmailPassState(error = it.error)
+                        }
+
+                        else -> {
+                            _loginWithEmailPassState.value =
+                                LoginWithEmailPassState(error = "Unknown Error")
+                        }
                     }
                 }
-            }
 
         }
     }
 
-}
+    private val _GetProductByIdState = MutableStateFlow(GetProductByIdState())
+    val getProductByIdState = _GetProductByIdState.asStateFlow()
 
+    fun GetProductById(productId: String) {
+        viewModelScope.launch {
+            GetProductById.getProductsByIDUseCase(productId).collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _GetProductByIdState.value = GetProductByIdState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _GetProductByIdState.value = GetProductByIdState(product = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _GetProductByIdState.value = GetProductByIdState(error = it.error)
+                    }
+                    else -> {
+                        _GetProductByIdState.value = GetProductByIdState(error = "Unknown Error")
+                }
+            }
+        }
+    }
+}
+}
 
 data class GetCategoryState(
     val isLoading: Boolean = false,
@@ -189,4 +222,9 @@ data class LoginWithEmailPassState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val userdata: String? = null
+)
+data class GetProductByIdState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val product: ProductModels? = null
 )

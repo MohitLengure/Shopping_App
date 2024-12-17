@@ -20,5 +20,6 @@ interface Repo {
 
     suspend fun loginwithemailpassword(userEmail: String, userPassword: String): Flow<ResultState<String>>
 
+    suspend fun getProductById(productId: String): Flow<ResultState<ProductModels>>
 
 }
