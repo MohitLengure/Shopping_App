@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.shoppingapp_user.Navigation.App
-import com.example.shoppingapp_user.presentation.HomeScreen
-import com.example.shoppingapp_user.presentation.SignUpScreen
-import com.example.shoppingapp_user.presentation.loginScreen
 import com.example.shoppingapp_user.ui.theme.ShoppingApp_UserTheme
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint

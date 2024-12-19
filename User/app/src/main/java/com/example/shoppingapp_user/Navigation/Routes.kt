@@ -18,6 +18,9 @@ sealed class SubNavigationItem {
 
     @Serializable
     object RegistrationComplited
+
+    @Serializable
+    object ForgotPassword
 }
 
 sealed class Routes {
@@ -27,6 +30,9 @@ sealed class Routes {
 
     @Serializable
     object SignUpScreen
+
+    @Serializable
+    object ForgotPassword
 
     @Serializable
     object HomeScreen

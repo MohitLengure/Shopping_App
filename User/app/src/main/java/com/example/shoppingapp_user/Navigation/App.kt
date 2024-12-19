@@ -10,10 +10,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.shoppingapp_user.presentation.EachProductDetailsScreen
 import com.example.shoppingapp_user.presentation.HomeScreen
+import com.example.shoppingapp_user.presentation.Login.ForgotPassword
 import com.example.shoppingapp_user.presentation.MyViewModel
-import com.example.shoppingapp_user.presentation.RegistrationComplited
-import com.example.shoppingapp_user.presentation.SignUpScreen
-import com.example.shoppingapp_user.presentation.loginScreen
+import com.example.shoppingapp_user.presentation.Login.RegistrationComplited
+import com.example.shoppingapp_user.presentation.Login.SignUpScreen
+import com.example.shoppingapp_user.presentation.Login.loginScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -72,6 +73,9 @@ fun App(firebaseAuth : FirebaseAuth) {
         }
         composable<Routes.SignUpScreen> {
             SignUpScreen(navController = navController)
+        }
+        composable<SubNavigationItem.ForgotPassword> {
+            ForgotPassword(navController = navController)
         }
     }
 }
