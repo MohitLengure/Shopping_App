@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,4 +78,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("io.coil-kt.coil3:coil-compose:3.0.3")
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }
