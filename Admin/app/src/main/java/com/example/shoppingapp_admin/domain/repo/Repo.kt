@@ -14,6 +14,8 @@ interface Repo {
 
     suspend fun addProduct(productmodels : productDataModel): Flow<ResultState<String>>
 
-    suspend fun UploadImage(image: Uri): Flow<ResultState<String>>
+    suspend fun UploadProductimage(image:Uri): Flow<ResultState<String>>
+
+    suspend fun UploadCategoryimage(image:Uri): Flow<ResultState<String>>
 
 }

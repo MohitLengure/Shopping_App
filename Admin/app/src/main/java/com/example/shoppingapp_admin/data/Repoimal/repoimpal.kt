@@ -1,6 +1,7 @@
 package com.example.shoppingapp_admin.data.Repoimal
 
 import android.net.Uri
+import android.util.Log
 import com.example.shoppingapp_admin.Common.CATEGORY
 import com.example.shoppingapp_admin.Common.PRODUCT
 import com.example.shoppingapp_admin.Common.ResultState
@@ -68,13 +69,35 @@ class repoimpal @Inject constructor(
         }
     }
 
-    override suspend fun UploadImage(image: Uri): Flow<ResultState<String>> = callbackFlow {
+
+
+    override suspend fun UploadProductimage(image: Uri): Flow<ResultState<String>> = callbackFlow {
 
         trySend(ResultState.Loading)
 
         storage.reference.child("Products/${System.currentTimeMillis()}")
             .putFile(image ?: Uri.EMPTY).addOnSuccessListener {
                 it.storage.downloadUrl.addOnSuccessListener {
+                    trySend(ResultState.Success(it.toString()))
+                }
+                if (it.error != null)
+                {
+                    trySend(ResultState.Error(it.error!!.message.toString()))
+                }
+            }
+        awaitClose{
+            close()
+        }
+    }
+
+    override suspend fun UploadCategoryimage(image: Uri): Flow<ResultState<String>> = callbackFlow {
+
+        trySend(ResultState.Loading)
+
+        storage.reference.child("Category/${System.currentTimeMillis()}")
+            .putFile(image ?: Uri.EMPTY).addOnSuccessListener {
+                it.storage.downloadUrl.addOnSuccessListener {
+                    Log.d("TAG3", "UploadCategoryImage: $it")
                     trySend(ResultState.Success(it.toString()))
                 }
                 if (it.error != null)

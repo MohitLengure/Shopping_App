@@ -1,23 +1,18 @@
 package com.example.shoppingapp_admin.UI_Layer.Screen
 
 import android.net.Uri
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.shoppingapp_admin.Common.ResultState
 import com.example.shoppingapp_admin.domain.models.Category
 import com.example.shoppingapp_admin.domain.models.productDataModel
 import com.example.shoppingapp_admin.domain.repo.Repo
 import com.example.shoppingapp_admin.domain.usercase.GetAllCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,7 +23,7 @@ class myviewModels @Inject constructor(
 ) : ViewModel() {
 
     private val _addCategory = MutableStateFlow(addCategoryState())
-    val addCategory = _addCategory.asStateFlow()
+    val addCategorystate = _addCategory.asStateFlow()
 
     init {
         suspend {
@@ -73,10 +68,6 @@ class myviewModels @Inject constructor(
         }
     }
 
-    fun resetcategory()
-    {
-        _addCategory.value = addCategoryState()
-    }
 
     //Add Product
 
@@ -103,30 +94,65 @@ class myviewModels @Inject constructor(
         }
     }
 
-    private val _uploadProductImage = MutableStateFlow(UploadImageState())
+    private val _uploadProductImage = MutableStateFlow(UploadProductImageState())
     val uploadProductImageState = _uploadProductImage.asStateFlow()
 
-    fun resetUploadImageState(){
-        _uploadProductImage.value = UploadImageState()
+    fun resetUploadProductImageState(){
+        _uploadProductImage.value = UploadProductImageState()
+    }
+    fun resetUploadCategoryImageState(){
+        _uploadCategoryImageState.value = UploadCategoryImageState()
     }
     fun resetAddProductState(){
         _addProduct.value = addProductState()
     }
+    fun resetAddCategoryState(){
+        _addCategory.value= addCategoryState()
+    }
 
-    fun uploadProductImage(image: Uri)
+    fun uploadProductImage(imageUri: Uri)
     {
         viewModelScope.launch {
-            repo.UploadImage(image).collectLatest {
+            repo.UploadProductimage(image = imageUri).collectLatest {
                 when(it){
                     is ResultState.Error ->{
-                        _uploadProductImage.value = UploadImageState(error = it.error)
+                        _uploadProductImage.value = UploadProductImageState(error = it.error)
                     }
                     is ResultState.Loading ->{
-                        _uploadProductImage.value = UploadImageState(isLoading = true)
+                        _uploadProductImage.value = UploadProductImageState(isLoading = true)
                     }
                     is ResultState.Success ->{
-                        _uploadProductImage.value = UploadImageState(Success = it.data)
+                        _uploadProductImage.value = UploadProductImageState(Success = it.data)
                     }
+                }
+            }
+
+        }
+
+    }
+
+    private val _uploadCategoryImageState = MutableStateFlow(UploadCategoryImageState())
+    val uploadCategoryImage_state = _uploadCategoryImageState.asStateFlow()
+
+    fun uploadCategoryImage(imageUri: Uri)
+    {
+        viewModelScope.launch {
+            repo.UploadCategoryimage(image = imageUri).collectLatest {
+                when(it){
+                    is ResultState.Error ->{
+                        _uploadCategoryImageState.value = UploadCategoryImageState(error = it.error)
+                    }
+                    is ResultState.Loading ->{
+                        _uploadCategoryImageState.value = UploadCategoryImageState(isLoading = true)
+                    }
+                    is ResultState.Success ->{
+                        Log.d(
+                            "TAG2",
+                            "uploadCategoryImage: ${it.data}"
+                        )
+                        _uploadCategoryImageState.value = UploadCategoryImageState(Success = it.data)
+                    }
+
                 }
             }
 
@@ -179,10 +205,15 @@ data class addProductState(
     var error: String = "",
     var data: String = ""
 )
-data class UploadImageState(
+data class UploadProductImageState(
     var isLoading: Boolean = false,
-    var error: String = "",
-    var Success: String = ""
+    var Success: String = "",
+    var error: String = ""
+)
+data class UploadCategoryImageState(
+    var isLoading: Boolean = false,
+    var Success: String = "",
+    var error: String = ""
 )
 
 data class GetCategoryState(

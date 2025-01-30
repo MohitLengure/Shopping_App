@@ -1,7 +1,7 @@
 package com.example.shoppingapp_admin.UI_Layer.Screen
 
 import android.annotation.SuppressLint
-import android.content.ContentValues.TAG
+import java.text.DecimalFormat
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -53,16 +53,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.example.shoppingapp_admin.Navigation.AC
+import com.example.shoppingapp_admin.Navigation.AP
 import com.example.shoppingapp_admin.domain.models.productDataModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.forEach
 import kotlin.math.log
 
-@Suppress("UNREACHABLE_CODE")
+
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 
 fun addProductScreen(navController: NavHostController, viewModel: myviewModels = hiltViewModel()) {
+
     val addProductState = viewModel.addProduct.collectAsState()
     val context = LocalContext.current
 
@@ -73,12 +75,13 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
     }
 
 
-    var uploadImage = viewModel.uploadProductImageState.collectAsState()
+    var uploadProductImage = viewModel.uploadProductImageState.collectAsState()
 
-    var getcategory= viewModel.getAllCategoryState.collectAsState()
+    var getcategory = viewModel.getAllCategoryState.collectAsState()
 
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var imageUrl by remember { mutableStateOf("") }
+
     var name by remember {
         mutableStateOf("")
     }
@@ -89,9 +92,6 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
         mutableStateOf("")
     }
     var finalPrice by remember {
-        mutableStateOf("")
-    }
-    var discount by remember {
         mutableStateOf("")
     }
     var category by remember {
@@ -106,19 +106,22 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
     var createdBy by remember {
         mutableStateOf("")
     }
+    val decimalFormat = DecimalFormat("#.##")
+    var Discount by remember { mutableStateOf("") }
 
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) {
         if (it != null) {
-           viewModel.uploadProductImage(it)
+            viewModel.uploadProductImage(it)
             imageUri = it
             /*viewModel.getAllCategoryState.value.data.also { it -> menuItemData = it }*/
         }
     }
 
     var isLoading by remember { mutableStateOf(true) }
+
 
     LaunchedEffect(Unit) {
         // Wait for 3 seconds, then stop the progress bar
@@ -127,78 +130,61 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
     }
 
 
-    when {
-
-        addProductState.value.isLoading  || uploadImage.value.isLoading  || getcategory.value.isLoading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-
-            ) {
-                if(isLoading)
-                {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    /*viewModel.getAllCategoryState.value.data.forEach {
-                        menuItemData.value = it?.name.toString()
-                    }*/
-                }
-                else
-                {
-                    Toast.makeText(context, "Successfull ", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-
-        addProductState.value.error != null || uploadImage.value.error != null || getcategory.value.error != null-> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            )
-            {
-                Text(text = addProductState.value.error)
-            }
-        }
-   /*     uploadImage.value.Success != null || addProductState.value.data != null || getcategory.value.data != null -> {
-            Toast.makeText(context, "Successfull Add Product", Toast.LENGTH_LONG).show()
-            imageUrl = uploadImage.value.Success
-            Log.d(TAG, "Upload Image $imageUrl")
-
-        }*/
-
-        uploadImage.value.Success.isNotBlank() ->
-        {
-            imageUrl = uploadImage.value.Success
-            viewModel.resetUploadImageState()
-        }
-
-
-
-        addProductState.value.data.isNotBlank() -> {
-            //viewModel.resetUploadImageState()
+    LaunchedEffect(addProductState.value.data) {
+        if (addProductState.value.data.isNotBlank()) {
+            Toast.makeText(context, "Product Added Successfully", Toast.LENGTH_LONG).show()
             name = ""
             description = ""
             price = ""
             finalPrice = ""
-            discount = ""
+            Discount = ""
             category = ""
             availableUnits = ""
             isAvailable = ""
             createdBy = ""
             imageUri = null
             imageUri = null
-            Toast.makeText(context, "Successfull Add Product", Toast.LENGTH_LONG).show()
+
             viewModel.resetAddProductState()
+            viewModel.resetUploadProductImageState()
+        }
+    }
 
-
+    when {
+        addProductState.value.isLoading || uploadProductImage.value.isLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+                Log.d("TAG", "Uploading Image or Adding Category...")
+            }
         }
 
+        uploadProductImage.value.Success.isNotEmpty() -> {
+            imageUrl = uploadProductImage.value.Success
+            Log.d("TAG", "Image uploaded successfully: $imageUrl")
+        }
 
+        addProductState.value.data.isNotEmpty() -> {
+            Toast.makeText(context, "Category Added Successfully", Toast.LENGTH_LONG).show()
+            navController.navigate(AP)
+            viewModel.resetAddProductState()
+            viewModel.resetUploadCategoryImageState()
+        }
+
+        addProductState.value.error.isNotEmpty() || uploadProductImage.value.error.isNotEmpty() -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = addProductState.value.error.ifEmpty { uploadProductImage.value.error })
+            }
+        }
     }
     Box()
     {
-       LazyColumn {
+        LazyColumn {
 
             item {
                 Row(
@@ -246,7 +232,9 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
                                     .fillMaxSize()
                                     .clickable {
                                         launcher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            PickVisualMediaRequest(
+                                                mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                                            )
                                         )
                                     }
                             ) {
@@ -256,7 +244,9 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
                                     contentDescription = null,
                                     modifier = Modifier.clickable {
                                         launcher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            PickVisualMediaRequest(
+                                                mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                                            )
                                         )
                                     }
                                 )
@@ -306,18 +296,20 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
                     TextButton(
                         onClick = {
                             if (price.isNotBlank() && finalPrice.isNotBlank()) {
-                                discount = discount(price.toDouble(), finalPrice.toDouble()).toString()
+                                Discount = decimalFormat.format(
+                                    discount(
+                                        price.toDouble(),
+                                        finalPrice.toDouble()
+                                    )
+                                )
                             } else {
                                 Toast.makeText(context, "Please Enter Price", Toast.LENGTH_LONG)
                             }
                         }
                     ) {
-                        if(discount.isNotBlank())
-                        {
-                            Text(text = "Discount : $discount")
-                        }
-                        else
-                        {
+                        if (Discount.isNotBlank()) {
+                            Text(text = "Discount :  $Discount")
+                        } else {
                             Text(text = "Discount Calculating...")
                         }
                     }
@@ -333,30 +325,30 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
                         }
                     )
 
-                 /*   var expanded by remember { mutableStateOf(false) }
-                    val selectedCategory = remember { mutableStateOf("") }
+                    /*   var expanded by remember { mutableStateOf(false) }
+                       val selectedCategory = remember { mutableStateOf("") }
 
-                    Box(modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f))
-                    {
-                        Text(text = "Select Category", modifier = Modifier.clickable {
-                            expanded = true
-                        })
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                       Box(modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f))
+                       {
+                           Text(text = "Select Category", modifier = Modifier.clickable {
+                               expanded = true
+                           })
+                           DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
 
-                            menuItemData.forEach {
-                                DropdownMenuItem(
-                                    text = { Text(text = it?.name.toString()) },
-                                    onClick = {
-                                        selectedCategory.value = it?.name.toString()
-                                        expanded = false
-                                    })
+                               menuItemData.forEach {
+                                   DropdownMenuItem(
+                                       text = { Text(text = it?.name.toString()) },
+                                       onClick = {
+                                           selectedCategory.value = it?.name.toString()
+                                           expanded = false
+                                       })
 
-                            }
+                               }
 
 
-                        }
-                    }
-*/
+                           }
+                       }
+   */
 
                     OutlinedTextField(
                         value = availableUnits,
@@ -380,30 +372,26 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
                         onClick =
                         {
 
-                            if (name != null && description != null && price != null  && imageUrl != null && finalPrice != null && discount != null && category != null && availableUnits != null && isAvailable != null && createdBy != null) {
+                            if (name.isNotBlank() && description.isNotBlank() && price.isNotBlank() && imageUrl.isNotBlank() && finalPrice.isNotBlank() && Discount.isNotBlank() && category.isNotBlank() && availableUnits.isNotBlank() && createdBy.isNotBlank()) {
                                 val data = productDataModel(
                                     name = name,
                                     description = description,
                                     price = price.toDouble(),
                                     finalPrice = finalPrice.toDouble(),
-                                    discount = discount.toDouble(),
+                                    discount = Discount.toDouble(),
                                     category = category,
                                     availableUnits = availableUnits.toInt(),
-                                   // isAvailable = isAvailable.value.toBoolean(),
+                                    // isAvailable = isAvailable.value.toBoolean(),
                                     Createdby = createdBy,
-                                    image = imageUri.toString()
+                                    image = imageUrl
                                 )
-
-                                viewModel.addProduct(
-                                    data
-                                )
+                                viewModel.addProduct(data)
                             } else {
                                 Toast.makeText(
                                     context,
                                     "Please Enter All Details",
                                     Toast.LENGTH_LONG
-                                )
-                                    .show()
+                                ).show()
                             }
                         }
                     ) {
@@ -419,6 +407,6 @@ fun addProductScreen(navController: NavHostController, viewModel: myviewModels =
 }
 
 fun discount(price: Double, finalPrice: Double): Double {
-    var discountamount  = price - finalPrice
+    var discountamount = price - finalPrice
     return discountamount / price * 100
 }

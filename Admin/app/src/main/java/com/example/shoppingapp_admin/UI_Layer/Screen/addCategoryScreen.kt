@@ -1,6 +1,7 @@
 package com.example.shoppingapp_admin.UI_Layer.Screen
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -40,77 +41,82 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.example.shoppingapp_admin.Navigation.AP
 import com.example.shoppingapp_admin.domain.models.Category
-import kotlinx.coroutines.delay
 
 @Composable
 fun addCategoryScreen(navController: NavHostController, viewModel: myviewModels = hiltViewModel()) {
 
-    var addCategoryState = viewModel.addCategory.collectAsState()
+    val addCategoryState = viewModel.addCategorystate.collectAsState()
+    val uploadImage = viewModel.uploadCategoryImage_state.collectAsState()
     val context = LocalContext.current
 
-    var uploadImage = viewModel.uploadProductImageState.collectAsState()
+    var categoryName by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var imageUrl by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) {
-        if (it != null) {
-            viewModel.uploadProductImage(it)
+        if (it != null)
+        {
+            viewModel.uploadCategoryImage(it)
             imageUri = it
             /*viewModel.getAllCategoryState.value.data.also { it -> menuItemData = it }*/
         }
-    }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        // Wait for 3 seconds, then stop the progress bar
-        delay(3000)
-        isLoading = false
+        else{
+            Toast.makeText(context,"Please Select Image",Toast.LENGTH_SHORT).show()
+        }
     }
 
+    LaunchedEffect(addCategoryState.value.data) {
+        if (addCategoryState.value.data.isNotBlank()) {
+            Toast.makeText(context, "Category Added Successfully", Toast.LENGTH_LONG).show()
+            categoryName = ""
+            imageUri = null
+            imageUrl = ""
+
+            viewModel.resetAddCategoryState()
+            viewModel.resetUploadCategoryImageState()
+        }
+    }
     when {
         addCategoryState.value.isLoading || uploadImage.value.isLoading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
-
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    /*viewModel.getAllCategoryState.value.data.forEach {
-                        menuItemData.value = it?.name.toString()
-                    }*/
-                } else {
-                    Toast.makeText(context, "Successfull ", Toast.LENGTH_LONG).show()
-                }
+                CircularProgressIndicator()
             }
         }
 
-        addCategoryState.value.error != null || uploadImage.value.error != null -> {
+        uploadImage.value.Success.isNotEmpty() -> {
+            imageUrl = uploadImage.value.Success
+            Log.d("TAG", "Image uploaded successfully: $imageUrl")
+        }
+
+        addCategoryState.value.data.isNotEmpty()-> {
+            Toast.makeText(context, "Category Added Successfully", Toast.LENGTH_LONG).show()
+/*
+            LaunchedEffect(Unit) {
+                categoryName = ""
+                imageUri = null
+                imageUrl = ""
+            }
+
+
+            viewModel.resetAddCategoryState()
+            viewModel.resetUploadCategoryImageState()*/
+        }
+
+
+        addCategoryState.value.error.isNotEmpty() || uploadImage.value.error.isNotEmpty() -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            )
-            {
-                Text(text = addCategoryState.value.error)
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = addCategoryState.value.error.ifEmpty { uploadImage.value.error })
             }
         }
-
-        addCategoryState.value.data != null -> {
-            Toast.makeText(context, "Successfull Add", Toast.LENGTH_LONG).show()
-            viewModel.resetcategory()
-            //viewModel.resetUploadImageState()
-        }
-
-        uploadImage.value.Success != null -> {
-            imageUrl = uploadImage.value.Success
-            viewModel.resetUploadImageState()
-        }
     }
-
     Row(
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.Start
@@ -129,11 +135,6 @@ fun addCategoryScreen(navController: NavHostController, viewModel: myviewModels 
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        var categoryName by remember {
-            mutableStateOf("")
-        }
-
-
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -167,7 +168,8 @@ fun addCategoryScreen(navController: NavHostController, viewModel: myviewModels 
                             .fillMaxSize()
                             .clickable {
                                 launcher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    PickVisualMediaRequest(
+                                        mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly)
                                 )
                             }
                     ) {
@@ -177,7 +179,8 @@ fun addCategoryScreen(navController: NavHostController, viewModel: myviewModels 
                             contentDescription = null,
                             modifier = Modifier.clickable {
                                 launcher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    PickVisualMediaRequest(
+                                        mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly)
                                 )
                             }
                         )
@@ -209,19 +212,27 @@ fun addCategoryScreen(navController: NavHostController, viewModel: myviewModels 
             )*/
 
             Button(
-                onClick =
-                {
-                    val data = Category(
-                        name = categoryName,
-                        imageUrl = imageUri.toString()
-                    )
-                    viewModel.addCategory(
-                        data
-                    )
+                onClick = {
+                    if (categoryName.isBlank()) {
+                        Toast.makeText(context, "Please enter a category name", Toast.LENGTH_SHORT).show()
+                    } else if (imageUri == null) {
+                        Toast.makeText(context, "Please select an image", Toast.LENGTH_SHORT).show()
+                    } else if (imageUrl.isBlank()) {
+                        Toast.makeText(context, "Please wait for the image to upload", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val data = Category(
+                            name = categoryName,
+                            imageUrl = imageUrl
+                        )
+                        viewModel.addCategory(data)
+                        Toast.makeText(context, "Category added successfully!", Toast.LENGTH_SHORT).show()
+                    }
                 }
             ) {
                 Text("Add Category")
             }
+
+
         }
     }
 }
